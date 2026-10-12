@@ -6,7 +6,7 @@ services:
     env_file:
       - .env
     volumes:
-      - highlight-work:/app/work
+      - ./data/work:/app/work
     ports:
       - "${HOST_API_PORT:-8800}:8000"
     healthcheck:
@@ -25,6 +25,3 @@ services:
     depends_on:
       api:
         condition: service_healthy
-
-volumes:
-  highlight-work:

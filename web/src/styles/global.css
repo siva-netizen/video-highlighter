@@ -643,6 +643,13 @@ select {
   cursor: not-allowed;
 }
 
+.artifact-dot {
+  width: 6px;
+  height: 6px;
+  background: var(--accent);
+  border-radius: 50%;
+}
+
 .transcript-list {
   list-style: none;
   margin: 0;
@@ -823,50 +830,6 @@ select {
 .activity-empty {
   color: var(--muted);
   font-style: italic;
-}
-
-.artifact-panel {
-  border: 1px solid var(--line);
-  padding: 1.25rem 1.5rem;
-  min-height: 420px;
-}
-
-.artifact-tabs {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.35rem;
-  margin: 0.75rem 0 1rem;
-}
-
-.artifact-tab {
-  background: transparent;
-  border: 1px solid var(--line);
-  color: var(--muted);
-  padding: 0.4rem 0.65rem;
-  font-size: 0.72rem;
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.35rem;
-}
-
-.artifact-tab-active {
-  color: var(--text);
-  border-color: var(--accent);
-}
-
-.artifact-tab-ready .artifact-dot {
-  width: 6px;
-  height: 6px;
-  background: var(--accent);
-  border-radius: 50%;
-}
-
-.artifact-body {
-  min-height: 280px;
 }
 
 .artifact-video {
