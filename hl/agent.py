@@ -17,7 +17,11 @@ from hl.agent_tools import (
 )
 from hl.config import CRITIC_MAX_LOOPS, ROUTER_MODEL, SCORER_MODEL
 from hl.event_sink import emit
-from hl.llm import chat_completions_create
+from hl.llm import (
+    _is_gemini_tool_history_error,
+    chat_completions_create,
+    chat_completions_json,
+)
 from hl.skills import (
     Skill,
     SkillCatalogEntry,
@@ -191,8 +195,11 @@ def score_windows_with_tools(
         "When done, respond with JSON only (no markdown): "
         '{"picks":[{"window_id":int,"score":1-10,"label":str,'
         '"pad_before":float,"pad_after":float,"reason":str}]}\n'
-        "Respect the loaded skill playbook and target duration."
+        "Respect the loaded skill playbook and target duration. "
+        "Estimated total duration (pads + window lengths) should be within ±15% of target_seconds. "
+        "Use approx_clips_needed from the user payload as a guide."
     )
+    approx_clips = max(6, int(target_seconds / 18))
     user = {
         "active_skill": skill.name,
         "playbook": skill.body,
@@ -200,13 +207,15 @@ def score_windows_with_tools(
         "default_pre_roll": skill.pre_roll,
         "default_post_roll": skill.post_roll,
         "target_seconds": target_seconds,
+        "approx_clips_needed": approx_clips,
         "critic_feedback": critic_feedback,
         "windows_index": window_summary,
     }
-    messages: list[dict] = [
+    base_messages: list[dict] = [
         {"role": "system", "content": system},
         {"role": "user", "content": json.dumps(user)[:100000]},
     ]
+    messages = list(base_messages)
     emit(
         "agent",
         "Scorer request",
@@ -214,14 +223,54 @@ def score_windows_with_tools(
         {"skill": skill.name, "target_seconds": target_seconds, "critic_feedback": critic_feedback},
     )
 
+    def _parse_picks_from_message(msg: Any) -> list[dict] | None:
+        content = (getattr(msg, "content", None) or "").strip()
+        if not content:
+            return None
+        if content.startswith("```"):
+            content = content.strip("`")
+            if content.lower().startswith("json"):
+                content = content[4:].strip()
+        data = json.loads(content)
+        picks = data.get("picks") if isinstance(data, dict) else data
+        if not isinstance(picks, list):
+            return None
+        for p in picks:
+            p.setdefault("pad_before", skill.pre_roll)
+            p.setdefault("pad_after", skill.post_roll)
+        return picks
+
     for round_i in range(max_rounds):
-        resp = chat_completions_create(
-            groq_model=SCORER_MODEL,
-            messages=messages,
-            tools=tools,
-            tool_choice="auto",
-            purpose="scorer",
-        )
+        try:
+            resp = chat_completions_create(
+                groq_model=SCORER_MODEL,
+                messages=messages,
+                tools=tools,
+                tool_choice="auto",
+                purpose="scorer",
+            )
+        except Exception as exc:
+            if not (_is_gemini_tool_history_error(exc) or "429" in str(exc).lower()):
+                raise
+            emit(
+                "system",
+                "Scorer tool loop aborted",
+                "JSON-only retry (Gemini/Groq tools incompatible)",
+                {"round": round_i + 1, "error": str(exc)[:300]},
+            )
+            resp = chat_completions_json(
+                groq_model=SCORER_MODEL,
+                messages=base_messages,
+                purpose="scorer-json",
+            )
+            msg = resp.choices[0].message
+            picks = _parse_picks_from_message(msg)
+            if picks is None:
+                raise RuntimeError(f"Scorer JSON fallback returned no picks: {exc}") from exc
+            wt.set_picks(picks)
+            emit("agent", "Scorer response", f"{len(picks)} picks (JSON fallback)", {"picks": picks})
+            return picks
+
         msg = resp.choices[0].message
         tool_calls = getattr(msg, "tool_calls", None) or []
 
@@ -267,20 +316,9 @@ def score_windows_with_tools(
                 )
             continue
 
-        content = (msg.content or "").strip()
-        if not content:
+        picks = _parse_picks_from_message(msg)
+        if picks is None:
             continue
-        if content.startswith("```"):
-            content = content.strip("`")
-            if content.lower().startswith("json"):
-                content = content[4:].strip()
-        data = json.loads(content)
-        picks = data.get("picks") if isinstance(data, dict) else data
-        if not isinstance(picks, list):
-            continue
-        for p in picks:
-            p.setdefault("pad_before", skill.pre_roll)
-            p.setdefault("pad_after", skill.post_roll)
         wt.set_picks(picks)
         emit(
             "agent",
@@ -313,8 +351,10 @@ def critic_check(
         )
 
     if est < target_seconds * 0.85:
+        need = max(3, int(target_seconds / 20) - len(picks))
         return False, (
-            f"Estimated duration {est:.0f}s below target {target_seconds}s; add higher-score moments."
+            f"Estimated duration {est:.0f}s below target {target_seconds}s; "
+            f"add ~{need} more moments (include score 5+ windows)."
         )
     if est > target_seconds * 1.15:
         return False, (
