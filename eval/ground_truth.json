@@ -1,0 +1,12 @@
+{
+  "videos": [
+    {
+      "id": "cricket_sample",
+      "path": "path/to/cricket_30min.mp4",
+      "events": [
+        { "label": "wicket", "start": 120.0, "end": 135.0 },
+        { "label": "six", "start": 840.0, "end": 855.0 }
+      ]
+    }
+  ]
+}
