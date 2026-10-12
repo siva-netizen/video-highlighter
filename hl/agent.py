@@ -6,7 +6,6 @@ import json
 from pathlib import Path
 from typing import Any, Literal
 
-from groq import Groq
 from langgraph.graph import END, StateGraph
 from typing_extensions import TypedDict
 
@@ -16,8 +15,9 @@ from hl.agent_tools import (
     groq_tool_definitions,
     parse_tool_arguments,
 )
-from hl.config import CRITIC_MAX_LOOPS, ROUTER_MODEL, SCORER_MODEL, require_groq_key
+from hl.config import CRITIC_MAX_LOOPS, ROUTER_MODEL, SCORER_MODEL
 from hl.event_sink import emit
+from hl.llm import chat_completions_create
 from hl.skills import (
     Skill,
     SkillCatalogEntry,
@@ -101,7 +101,6 @@ def route_skill_with_catalog(
         emit("agent", "Skill pinned", forced, {"skill": forced})
         return forced
 
-    client = Groq(api_key=require_groq_key())
     emit(
         "agent",
         "Router request",
@@ -115,10 +114,11 @@ def route_skill_with_catalog(
         f"{catalog_as_prompt_lines(catalog)}\n\n"
         f"Transcript sample:\n{transcript_sample[:6000]}"
     )
-    resp = client.chat.completions.create(
-        model=ROUTER_MODEL,
+    resp = chat_completions_create(
+        groq_model=ROUTER_MODEL,
         messages=[{"role": "user", "content": prompt}],
         response_format={"type": "json_object"},
+        purpose="router",
     )
     data = json.loads(resp.choices[0].message.content or "{}")
     chosen = str(data.get("skill", "")).strip()
@@ -172,7 +172,6 @@ def score_windows_with_tools(
     *,
     max_rounds: int = 16,
 ) -> list[dict]:
-    client = Groq(api_key=require_groq_key())
     wt = WindowTools(windows)
     tools = groq_tool_definitions()
 
@@ -216,11 +215,12 @@ def score_windows_with_tools(
     )
 
     for round_i in range(max_rounds):
-        resp = client.chat.completions.create(
-            model=SCORER_MODEL,
+        resp = chat_completions_create(
+            groq_model=SCORER_MODEL,
             messages=messages,
             tools=tools,
             tool_choice="auto",
+            purpose="scorer",
         )
         msg = resp.choices[0].message
         tool_calls = getattr(msg, "tool_calls", None) or []

@@ -30,6 +30,8 @@ python3 -m venv .venv
 
 Optional overrides: `STT_MODEL`, `SCORER_MODEL`, `ROUTER_MODEL`.
 
+**Groq 429 on agent (router/scorer):** set `GEMINI_API_KEY` and `GEMINI_MODEL` (e.g. `gemini-3.1-flash-lite`). Pipeline retries those LLM calls on Google’s OpenAI-compatible endpoint. Whisper STT stays on Groq.
+
 ## Run (CLI)
 
 ```bash

@@ -14,6 +14,13 @@ STT_MODEL = os.environ.get("STT_MODEL", "whisper-large-v3-turbo")
 SCORER_MODEL = os.environ.get("SCORER_MODEL", "openai/gpt-oss-120b")
 ROUTER_MODEL = os.environ.get("ROUTER_MODEL", "openai/gpt-oss-20b")
 
+GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "")
+GEMINI_MODEL = os.environ.get("GEMINI_MODEL", "gemini-2.0-flash-lite")
+GEMINI_OPENAI_BASE = os.environ.get(
+    "GEMINI_OPENAI_BASE",
+    "https://generativelanguage.googleapis.com/v1beta/openai/",
+)
+
 WHISPER_CHUNK_SECONDS = 600
 CONTENT_DETECTOR_THRESHOLD = 27.0
 MIN_CLIP_SECONDS = 4.0
