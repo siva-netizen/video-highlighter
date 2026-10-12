@@ -23,7 +23,13 @@ function kindLabel(kind: string): string {
   return map[kind] ?? kind.toUpperCase().slice(0, 4);
 }
 
-export function ActivityStream({ events }: { events: JobEvent[] }) {
+export function ActivityStream({
+  events,
+  expanded = false,
+}: {
+  events: JobEvent[];
+  expanded?: boolean;
+}) {
   const tail = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -31,7 +37,7 @@ export function ActivityStream({ events }: { events: JobEvent[] }) {
   }, [events.length]);
 
   return (
-    <div className="activity-stream">
+    <div className={`activity-stream ${expanded ? "activity-stream-expanded" : ""}`}>
       <div className="activity-head">
         <p className="governance-label">Live activity</p>
         <p className="activity-sub">Agent calls, tools, pipeline stages</p>

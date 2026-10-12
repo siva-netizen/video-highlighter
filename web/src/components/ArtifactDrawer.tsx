@@ -127,20 +127,20 @@ export function ArtifactDrawer({
     };
   }, [jobId, open, running]);
 
-  if (!open || !view) return null;
+  if (!view || !open) return null;
 
   const title = TITLES[view];
   const arts = manifest?.artifacts;
 
   return (
-    <aside className={`artifact-drawer ${open ? "artifact-drawer-open" : ""}`}>
-      <header className="artifact-drawer-head">
+    <section className="artifact-preview-panel artifact-slide-panel" aria-label="Artifact preview">
+      <header className="artifact-preview-head">
         <h3>{title}</h3>
-        <button type="button" className="toast-close" onClick={onClose} aria-label="Close panel">
+        <button type="button" className="toast-close" onClick={onClose} aria-label="Close preview">
           ×
         </button>
       </header>
-      <div className="artifact-drawer-body">
+      <div className="artifact-preview-body">
         {view === "video" &&
           (arts?.video.ready && arts.video.url ? (
             <video className="artifact-video" controls src={arts.video.url} />
@@ -198,17 +198,19 @@ export function ArtifactDrawer({
         )}
         {view === "plan" && !plan && <p className="activity-empty">Plan not ready.</p>}
       </div>
-    </aside>
+    </section>
   );
 }
 
 export function ArtifactLauncher({
   jobId,
   manifest,
+  activeView,
   onOpen,
 }: {
   jobId: string | null;
   manifest: ArtifactManifest | null;
+  activeView?: DrawerView;
   onOpen: (view: Exclude<DrawerView, null>) => void;
 }) {
   if (!jobId) return null;
@@ -229,7 +231,7 @@ export function ArtifactLauncher({
           <button
             key={c.id}
             type="button"
-            className={`artifact-chip ${c.ready ? "artifact-chip-ready" : ""}`}
+            className={`artifact-chip ${c.ready ? "artifact-chip-ready" : ""} ${activeView === c.id ? "artifact-chip-active" : ""}`}
             disabled={!c.ready}
             onClick={() => onOpen(c.id)}
           >

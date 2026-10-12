@@ -44,7 +44,7 @@ Artifacts land under `work/` (transcript, shots, windows, `plan.json`, `summary.
 Terminal 1 — API (from repo root, venv active):
 
 ```bash
-.venv/bin/python -m uvicorn hl.server:app --reload --port 8000
+.venv/bin/python -m uvicorn hl.server:app --reload --port 8800
 ```
 
 Terminal 2 — frontend:
@@ -53,16 +53,18 @@ Terminal 2 — frontend:
 cd web && npm install && npm run dev
 ```
 
-Open http://localhost:5173 — upload video in **Studio**, poll until `highlights.mp4` plays.
+Open http://localhost:5174 — upload video in **Studio**, poll until `highlights.mp4` plays.
 
 ## Docker
 
-Requires Docker Desktop running. Ports are chosen from free candidates on your machine:
+Requires Docker Desktop running. Host ports are fixed:
 
-| Service | Container | Default host port | Fallbacks |
-|---------|-----------|-------------------|-----------|
-| API | 8000 | **8800** | 8000, 8001, 8080 |
-| Web (nginx) | 80 | **5173** | 5174, 3000, 8081 |
+| Service | Container | Host port |
+|---------|-----------|-----------|
+| API | 8000 | **8800** |
+| Web (nginx) | 80 | **5174** |
+
+`scripts/pick-docker-ports.sh` fails fast if either port is already in use.
 
 ```bash
 cp .env.example .env   # set GROQ_API_KEY
@@ -77,7 +79,7 @@ source scripts/pick-docker-ports.sh
 HOST_API_PORT=$HOST_API_PORT HOST_WEB_PORT=$HOST_WEB_PORT docker compose up --build
 ```
 
-UI: `http://localhost:$HOST_WEB_PORT` · API direct: `http://localhost:$HOST_API_PORT/api/health`
+UI: http://localhost:5174 · API: http://localhost:8800/api/health
 
 ### Job storage (no database)
 

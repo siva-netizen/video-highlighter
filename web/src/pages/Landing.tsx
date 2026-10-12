@@ -32,8 +32,8 @@ export function Landing() {
             <Link className="btn btn-accent" to="/studio">
               Make highlights
             </Link>
-            <Link className="btn btn-ghost" to="/studio">
-              Open studio
+            <Link className="btn btn-ghost" to="/doc">
+              Read the doc
             </Link>
           </div>
         </div>
@@ -50,7 +50,7 @@ export function Landing() {
         ))}
       </div>
 
-      <section className="trust grid-cell" id="pipeline">
+      <section className="trust grid-cell">
         <div className="trust-block">
           <strong>CV-1</strong>
           <span>Shot boundaries</span>

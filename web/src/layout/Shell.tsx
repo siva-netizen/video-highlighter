@@ -3,6 +3,7 @@ import { Link, Outlet, useLocation } from "react-router-dom";
 export function Shell() {
   const { pathname } = useLocation();
   const onStudio = pathname.startsWith("/studio");
+  const onDoc = pathname.startsWith("/doc");
 
   return (
     <div className="page">
@@ -12,17 +13,28 @@ export function Shell() {
           ReelBite
         </Link>
         <nav className="nav">
-          {!onStudio && <a href="/#pipeline">Pipeline</a>}
-          <Link to="/studio">Studio</Link>
+          {onStudio || onDoc ? (
+            <Link to="/">Home</Link>
+          ) : (
+            <Link to="/doc">Doc</Link>
+          )}
+          {onStudio && <span className="nav-current">Studio</span>}
+          {onDoc && <span className="nav-current">Doc</span>}
         </nav>
-        <Link className="btn btn-accent btn-sm" to="/studio">
-          Open studio
-        </Link>
+        {onStudio || onDoc ? (
+          <Link className="btn btn-ghost btn-sm" to="/">
+            ← Back
+          </Link>
+        ) : (
+          <Link className="btn btn-accent btn-sm" to="/studio">
+            Open studio
+          </Link>
+        )}
       </header>
       <Outlet />
       <footer className="footer grid-cell">
         <span>ReelBite · Agentic Highlight Maker</span>
-        <span>GROQ_API_KEY in server .env</span>
+        <span>Built by Precision and Recall</span>
       </footer>
     </div>
   );

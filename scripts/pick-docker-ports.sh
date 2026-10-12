@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
-# Pick host ports not in use (Docker publish + local listeners).
+# Fixed host ports for ReelBite (Docker publish + local dev defaults).
 set -euo pipefail
+
+API_PORT=8800
+WEB_PORT=5174
 
 is_free() {
   local port="$1"
@@ -11,24 +14,22 @@ is_free() {
   fi
 }
 
-pick_from() {
-  local chosen=""
-  for p in "$@"; do
-    if is_free "$p"; then
-      chosen="$p"
-      break
-    fi
-  done
-  if [[ -z "$chosen" ]]; then
-    echo "No free port in candidates: $*" >&2
-    exit 1
-  fi
-  echo "$chosen"
+port_published_by_docker() {
+  local port="$1"
+  docker ps --format '{{.Ports}}' 2>/dev/null | grep -qE ":${port}->"
 }
 
-# Prefer defaults; fall through if occupied (common dev stack conflicts).
-API_PORT="$(pick_from 8800 8000 8001 8080 8888)"
-WEB_PORT="$(pick_from 5173 5174 3000 3001 8081)"
+for port in "$API_PORT" "$WEB_PORT"; do
+  if is_free "$port"; then
+    continue
+  fi
+  if port_published_by_docker "$port"; then
+    echo "Port $port already used by Docker — will recreate this stack." >&2
+    continue
+  fi
+  echo "Port $port is in use by a non-Docker process. Stop it, then retry." >&2
+  exit 1
+done
 
 export HOST_API_PORT="$API_PORT"
 export HOST_WEB_PORT="$WEB_PORT"

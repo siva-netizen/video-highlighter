@@ -21,7 +21,7 @@ services:
       context: .
       dockerfile: web/Dockerfile
     ports:
-      - "${HOST_WEB_PORT:-5173}:80"
+      - "${HOST_WEB_PORT:-5174}:80"
     depends_on:
       api:
         condition: service_healthy

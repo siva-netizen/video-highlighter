@@ -33,15 +33,16 @@ type Props = {
   job: JobMeta;
   onResume?: () => void;
   resuming?: boolean;
+  compact?: boolean;
 };
 
-export function JobGovernance({ job, onResume, resuming = false }: Props) {
+export function JobGovernance({ job, onResume, resuming = false, compact = false }: Props) {
   const pct = job.progress_pct ?? (job.status === "completed" ? 100 : 0);
   const activeIdx = stageIndex(job.progress_stage ?? job.stage);
   const running = job.status === "queued" || job.status === "running";
 
   return (
-    <div className="governance" role="status" aria-live="polite">
+    <div className={`governance ${compact ? "governance-compact" : ""}`} role="status" aria-live="polite">
       <div className="governance-head">
         <div>
           <p className="governance-label">Pipeline status</p>
@@ -68,20 +69,28 @@ export function JobGovernance({ job, onResume, resuming = false }: Props) {
         </p>
       )}
 
-      <ol className="governance-steps">
-        {STAGES.map((s, i) => {
-          let state: "done" | "active" | "pending" = "pending";
-          if (job.status === "completed" || i < activeIdx) state = "done";
-          else if (i === activeIdx) state = "active";
-          else if (job.status === "failed" && i === activeIdx) state = "active";
-          return (
-            <li key={s.id} className={`gov-step gov-step-${state}`}>
-              <span className="gov-step-dot" />
-              <span>{s.label}</span>
-            </li>
-          );
-        })}
-      </ol>
+      {!compact && (
+        <ol className="governance-steps">
+          {STAGES.map((s, i) => {
+            let state: "done" | "active" | "pending" = "pending";
+            if (job.status === "completed" || i < activeIdx) state = "done";
+            else if (i === activeIdx) state = "active";
+            else if (job.status === "failed" && i === activeIdx) state = "active";
+            return (
+              <li key={s.id} className={`gov-step gov-step-${state}`}>
+                <span className="gov-step-dot" />
+                <span>{s.label}</span>
+              </li>
+            );
+          })}
+        </ol>
+      )}
+
+      {compact && activeIdx >= 0 && (
+        <p className="governance-step-compact">
+          Step {activeIdx + 1}/{STAGES.length} · {STAGES[activeIdx]?.label ?? job.stage}
+        </p>
+      )}
 
       {job.skill && job.skill !== "auto" && (
         <p className="governance-skill">

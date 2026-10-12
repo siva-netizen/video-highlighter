@@ -1,5 +1,6 @@
 import { Navigate, Route, Routes } from "react-router-dom";
 import { Shell } from "./layout/Shell";
+import { Doc } from "./pages/Doc";
 import { Landing } from "./pages/Landing";
 import { Studio } from "./pages/Studio";
 
@@ -8,6 +9,7 @@ export default function App() {
     <Routes>
       <Route element={<Shell />}>
         <Route index element={<Landing />} />
+        <Route path="doc" element={<Doc />} />
         <Route path="studio" element={<Studio />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Route>

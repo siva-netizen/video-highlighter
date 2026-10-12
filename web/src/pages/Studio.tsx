@@ -1,4 +1,5 @@
 import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
+import { Link } from "react-router-dom";
 import {
   ArtifactDrawer,
   ArtifactLauncher,
@@ -213,19 +214,24 @@ export function Studio() {
   const running = busy || job?.status === "queued" || job?.status === "running";
 
   return (
-    <section className={`studio grid-cell studio-page ${drawerView ? "studio-drawer-open" : ""}`}>
+    <section className="studio grid-cell studio-page">
       <ToastStack toasts={toasts} onDismiss={(id) => setToasts((t) => t.filter((x) => x.id !== id))} />
 
       <div className="studio-head">
-        <h2>Studio</h2>
+        <div className="studio-head-row">
+          <Link to="/" className="btn btn-ghost btn-sm studio-back">
+            ← Home
+          </Link>
+          <h2>Studio</h2>
+        </div>
         <p>
           {apiOk === false
-            ? "API unreachable — check Docker or uvicorn on port 8800."
-            : "History left · activity center · artifacts slide in on the right."}
+            ? "API unreachable — check Docker (UI :5174) or uvicorn on port 8800."
+            : "Session history · pipeline · right-side artifact preview · live activity below."}
         </p>
       </div>
 
-      <div className="studio-claude-layout">
+      <div className={`studio-claude-layout ${drawerView ? "studio-preview-open" : ""}`}>
         <SessionHistory
           activeJobId={activeJobId}
           onRestore={restoreSession}
@@ -234,7 +240,7 @@ export function Studio() {
           refreshKey={historyRefresh}
         />
 
-        <div className="studio-center">
+        <div className="studio-workspace">
           {showForm && (
             <form className="studio-form" onSubmit={onSubmit}>
               <label className="field">
@@ -264,8 +270,9 @@ export function Studio() {
           )}
 
           {showWorkspace && (
-            <>
+            <div className="studio-workspace-stack">
               <JobGovernance
+                compact
                 job={
                   job ?? {
                     id: jobId ?? "",
@@ -277,19 +284,33 @@ export function Studio() {
                 onResume={jobId ? () => resumeSession(jobId) : undefined}
                 resuming={resuming}
               />
-              <ArtifactLauncher jobId={jobId} manifest={manifest} onOpen={openDrawer} />
-              <ActivityStream events={events} />
-            </>
+              <ArtifactLauncher
+                jobId={jobId}
+                manifest={manifest}
+                activeView={drawerView}
+                onOpen={openDrawer}
+              />
+            </div>
           )}
         </div>
 
-        <ArtifactDrawer
-          jobId={jobId}
-          view={drawerView}
-          open={!!drawerView}
-          running={running}
-          onClose={() => setDrawerView(null)}
-        />
+        {showWorkspace && (
+          <div className="studio-preview-slot">
+            <ArtifactDrawer
+              jobId={jobId}
+              view={drawerView}
+              open={!!drawerView}
+              running={running}
+              onClose={() => setDrawerView(null)}
+            />
+          </div>
+        )}
+
+        {showWorkspace && (
+          <div className="studio-activity-pane">
+            <ActivityStream events={events} expanded />
+          </div>
+        )}
       </div>
     </section>
   );
