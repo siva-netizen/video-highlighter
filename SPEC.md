@@ -100,24 +100,24 @@ flowchart TD
 
 ### Skill library (the agent's memory)
 
-Each skill is a markdown file with YAML front matter, so both the LLM and the code can read it.
+Each skill is an Anthropic-style skill directory (`SKILL.md` + optional `references/`), so both the LLM and the code can read it. Pipeline fields (`pre_roll`, `post_roll`, `keywords`) live in YAML `metadata`.
 
 ```
-skills/cricket.md
+skills/cricket/SKILL.md
 ---
 name: cricket
-description: cricket matches with commentary
-pre_roll: 6
-post_roll: 6
-keywords: [wicket, out, six, four, caught, bowled, lbw, century, fifty, dropped]
+description: ... what it does + when to use it ...
+metadata:
+  pre_roll: 6
+  post_roll: 6
+  keywords: wicket,out,six,...
 ---
-# What is a highlight (rank high) ...
-# Audio cues ...
-# Skip ...
-# Editing rules ...
+# Instructions, examples, troubleshooting (concise)
 ```
 
-Planned skills: `cricket`, `football`, `generic`. Adding a new sport = adding one file; no code change. (Stretch: let the agent draft a new skill file from a few example highlight reels.)
+Detailed scoring rules go in `skills/cricket/references/scoring-playbook.md` (progressive disclosure). Validate with `python skills/scripts/validate_all.py`.
+
+Planned skills: `cricket`, `football`, `generic`. Adding a new sport = adding one folder; minimal code change (CLI/router enum). (Stretch: let the agent draft a new skill from example reels.)
 
 ---
 
@@ -207,9 +207,10 @@ highlight-maker/
 │   ├── dedup.py              # CV-3
 │   └── render.py             # ffmpeg cut + concat
 ├── skills/
-│   ├── cricket.md
-│   ├── football.md
-│   └── generic.md
+│   ├── cricket/SKILL.md
+│   ├── football/SKILL.md
+│   ├── generic/SKILL.md
+│   └── scripts/validate_all.py
 ├── eval/
 │   ├── ground_truth.json     # hand-marked events per video
 │   └── run_eval.py

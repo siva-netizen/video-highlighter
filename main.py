@@ -8,17 +8,19 @@ from pathlib import Path
 
 from hl.config import DEFAULT_WORK_DIR
 from hl.pipeline import run_pipeline
+from hl.skills import list_skills
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Agentic highlight maker")
     parser.add_argument("video", type=Path, help="Input video file (~30 min)")
     parser.add_argument("--target", type=int, default=120, help="Target highlight duration (seconds)")
+    skill_names = list_skills()
     parser.add_argument(
         "--skill",
         default="auto",
-        choices=["auto", "cricket", "football", "generic"],
-        help="Skill playbook (auto = router)",
+        choices=["auto", *skill_names],
+        help="Skill playbook from skills/*/SKILL.md (auto = LLM router over catalog)",
     )
     parser.add_argument("--out", type=Path, default=None, help="Output highlights.mp4 path")
     parser.add_argument("--work-dir", type=Path, default=DEFAULT_WORK_DIR, help="Cache directory")
